@@ -86,6 +86,7 @@ export class MapPlaylist {
       gameMap: map,
       gameMode: mode,
       gameType: GameType.Public,
+      ignoreClanTags: false,
       infiniteGold: false,
       infiniteTroops: false,
       instantBuild: false,

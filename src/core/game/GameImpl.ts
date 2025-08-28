@@ -150,7 +150,7 @@ export class GameImpl implements Game {
       ...this._humans,
       ...this._nations.map((n) => n.playerInfo),
     ];
-    const playerToTeam = assignTeams(allPlayers, this.playerTeams);
+    const playerToTeam = assignTeams(allPlayers, this.playerTeams, this.config().gameConfig().ignoreClanTags);
     for (const [playerInfo, team] of playerToTeam.entries()) {
       if (team === "kicked") {
         console.warn(`Player ${playerInfo.name} was kicked from team`);

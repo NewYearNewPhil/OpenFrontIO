@@ -143,6 +143,7 @@ export const GameConfigSchema = z.object({
   gameMap: z.enum(GameMapType),
   gameMode: z.enum(GameMode),
   gameType: z.enum(GameType),
+  ignoreClanTags: z.boolean(),
   infiniteGold: z.boolean(),
   infiniteTroops: z.boolean(),
   instantBuild: z.boolean(),

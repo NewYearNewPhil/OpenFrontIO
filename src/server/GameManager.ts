@@ -48,6 +48,7 @@ export class GameManager {
         gameMap: GameMapType.World,
         gameMode: GameMode.FFA,
         gameType: GameType.Private,
+        ignoreClanTags: false,
         infiniteGold: false,
         infiniteTroops: false,
         instantBuild: false,

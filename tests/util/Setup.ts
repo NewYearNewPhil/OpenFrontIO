@@ -74,6 +74,7 @@ export async function setup(
     infiniteGold: false,
     infiniteTroops: false,
     instantBuild: false,
+    ignoreClanTags: false,
     ..._gameConfig,
   };
   const config = new TestConfig(

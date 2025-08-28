@@ -52,6 +52,7 @@ export class HostLobbyModal extends LitElement {
   @state() private clients: ClientInfo[] = [];
   @state() private useRandomMap = false;
   @state() private disabledUnits: UnitType[] = [];
+  @state() private ignoreClanTags = false;
   @state() private lobbyCreatorClientID = "";
   @state() private lobbyIdVisible = true;
 
@@ -445,6 +446,28 @@ export class HostLobbyModal extends LitElement {
                   </div>
                 </label>
 
+                ${
+                  this.gameMode === GameMode.FFA
+                    ? ""
+                    : html`
+                      <label
+                        for="ignore-clan-tags"
+                        class="option-card ${this.ignoreClanTags ? "selected" : ""}"
+                      >
+                        <div class="checkbox-icon"></div>
+                        <input
+                          type="checkbox"
+                          id="ignore-clan-tags"
+                          @change=${this.handleIgnoreClanTagsChange}
+                          .checked=${this.ignoreClanTags}
+                        />
+                        <div class="option-card-title">
+                          ${translateText("host_modal.ignore_clan_tags")}
+                        </div>
+                      </label>
+                      `
+                }
+
                 <hr style="width: 100%; border-top: 1px solid #444; margin: 16px 0;" />
 
                 <!-- Individual disables for structures/weapons -->
@@ -623,6 +646,11 @@ export class HostLobbyModal extends LitElement {
     this.putGameConfig();
   }
 
+  private handleIgnoreClanTagsChange(e: Event) {
+    this.ignoreClanTags = Boolean((e.target as HTMLInputElement).checked);
+    this.putGameConfig();
+  }
+
   private handleDonateTroopsChange(e: Event) {
     this.donateTroops = Boolean((e.target as HTMLInputElement).checked);
     this.putGameConfig();
@@ -663,6 +691,7 @@ export class HostLobbyModal extends LitElement {
           infiniteTroops: this.infiniteTroops,
           donateTroops: this.donateTroops,
           instantBuild: this.instantBuild,
+          ignoreClanTags: this.ignoreClanTags,
           gameMode: this.gameMode,
           disabledUnits: this.disabledUnits,
           playerTeams: this.teamCount,

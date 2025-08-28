@@ -5,6 +5,7 @@ import { simpleHash } from "../Util";
 export function assignTeams(
   players: PlayerInfo[],
   teams: Team[],
+  ignoreClanTags: boolean,
 ): Map<PlayerInfo, Team | "kicked"> {
   const result = new Map<PlayerInfo, Team | "kicked">();
   const teamPlayerCount = new Map<Team, number>();
@@ -13,17 +14,21 @@ export function assignTeams(
   const clanGroups = new Map<string, PlayerInfo[]>();
   const noClanPlayers: PlayerInfo[] = [];
 
-  // Sort players into clan groups or no-clan list
-  for (const player of players) {
-    if (player.clan) {
-      let group = clanGroups.get(player.clan);
-      if (group === undefined) {
-        group = [];
-        clanGroups.set(player.clan, group);
+  if(ignoreClanTags) {
+    noClanPlayers.push(...players);
+  } else {
+    // Sort players into clan groups or no-clan list
+    for (const player of players) {
+      if (player.clan) {
+        let group = clanGroups.get(player.clan);
+        if (group === undefined) {
+          group = [];
+          clanGroups.set(player.clan, group);
+        }
+        group.push(player);
+      } else {
+        noClanPlayers.push(player);
       }
-      group.push(player);
-    } else {
-      noClanPlayers.push(player);
     }
   }
 

@@ -122,6 +122,10 @@ export class GameServer {
     if (gameConfig.playerTeams !== undefined) {
       this.gameConfig.playerTeams = gameConfig.playerTeams;
     }
+
+    if (gameConfig.ignoreClanTags !== undefined) {
+      this.gameConfig.ignoreClanTags = gameConfig.ignoreClanTags;
+    }
   }
 
   public addClient(client: Client, lastTurn: number) {

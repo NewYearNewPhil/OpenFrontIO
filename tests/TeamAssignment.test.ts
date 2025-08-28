@@ -23,7 +23,7 @@ describe("assignTeams", () => {
       createPlayer("4"),
     ];
 
-    const result = assignTeams(players, teams);
+    const result = assignTeams(players, teams, false);
 
     // Check that players are assigned alternately
     expect(result.get(players[0])).toEqual(ColoredTeams.Red);
@@ -40,7 +40,7 @@ describe("assignTeams", () => {
       createPlayer("4", "CLANB"),
     ];
 
-    const result = assignTeams(players, teams);
+    const result = assignTeams(players, teams, false);
 
     // Check that clan members are on the same team
     expect(result.get(players[0])).toEqual(ColoredTeams.Red);
@@ -57,7 +57,7 @@ describe("assignTeams", () => {
       createPlayer("4"),
     ];
 
-    const result = assignTeams(players, teams);
+    const result = assignTeams(players, teams, false);
 
     // Check that clan members are together and non-clan players balance teams
     expect(result.get(players[0])).toEqual(ColoredTeams.Red);
@@ -76,7 +76,7 @@ describe("assignTeams", () => {
       createPlayer("6", "CLANB"),
     ];
 
-    const result = assignTeams(players, teams);
+    const result = assignTeams(players, teams, false);
 
     // Check that players are kicked when teams are full
     expect(result.get(players[0])).toEqual(ColoredTeams.Red);
@@ -90,13 +90,13 @@ describe("assignTeams", () => {
   });
 
   it("should handle empty player list", () => {
-    const result = assignTeams([], teams);
+    const result = assignTeams([], teams, false);
     expect(result.size).toBe(0);
   });
 
   it("should handle single player", () => {
     const players = [createPlayer("1")];
-    const result = assignTeams(players, teams);
+    const result = assignTeams(players, teams, false);
     expect(result.get(players[0])).toEqual(ColoredTeams.Red);
   });
 
@@ -110,7 +110,7 @@ describe("assignTeams", () => {
       createPlayer("6", "CLANC"),
     ];
 
-    const result = assignTeams(players, teams);
+    const result = assignTeams(players, teams, false);
 
     // Check that larger clans are assigned first
     expect(result.get(players[0])).toEqual(ColoredTeams.Red);
@@ -147,7 +147,7 @@ describe("assignTeams", () => {
       ColoredTeams.Purple,
       ColoredTeams.Orange,
       ColoredTeams.Teal,
-    ]);
+    ], false);
 
     expect(result.get(players[0])).toEqual(ColoredTeams.Red);
     expect(result.get(players[1])).toEqual(ColoredTeams.Red);
@@ -163,5 +163,42 @@ describe("assignTeams", () => {
     expect(result.get(players[11])).toEqual(ColoredTeams.Green);
     expect(result.get(players[12])).toEqual(ColoredTeams.Purple);
     expect(result.get(players[13])).toEqual(ColoredTeams.Orange);
+  });
+
+  describe("when ignoreClanTags is true", () => {
+    it("should ignore clan tags and distribute players evenly", () => {
+      const players = [
+        createPlayer("1", "CLANA"),
+        createPlayer("2", "CLANA"),
+        createPlayer("3", "CLANB"),
+        createPlayer("4", "CLANB"),
+      ];
+
+      const result = assignTeams(players, teams, true);
+
+      // Check that clan members are NOT kept together
+      // Players should be distributed evenly across teams
+      expect(result.get(players[0])).toEqual(ColoredTeams.Red);
+      expect(result.get(players[1])).toEqual(ColoredTeams.Blue);
+      expect(result.get(players[2])).toEqual(ColoredTeams.Red);
+      expect(result.get(players[3])).toEqual(ColoredTeams.Blue);
+    });
+
+    it("should handle mixed clan and non-clan players the same", () => {
+      const players = [
+        createPlayer("1", "CLANA"),
+        createPlayer("2", "CLANA"),
+        createPlayer("3"),
+        createPlayer("4"),
+      ];
+
+      const result = assignTeams(players, teams, true);
+
+      // Check that all players are distributed evenly, regardless of clan status
+      expect(result.get(players[0])).toEqual(ColoredTeams.Red);
+      expect(result.get(players[1])).toEqual(ColoredTeams.Blue);
+      expect(result.get(players[2])).toEqual(ColoredTeams.Red);
+      expect(result.get(players[3])).toEqual(ColoredTeams.Blue);
+    });
   });
 });

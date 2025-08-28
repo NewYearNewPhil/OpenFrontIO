@@ -461,6 +461,7 @@ export class SinglePlayerModal extends LitElement {
               disabledUnits: this.disabledUnits
                 .map((u) => Object.values(UnitType).find((ut) => ut === u))
                 .filter((ut): ut is UnitType => ut !== undefined),
+              ignoreClanTags: false,
             },
           },
         } satisfies JoinLobbyEvent,
