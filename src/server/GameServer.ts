@@ -123,6 +123,10 @@ export class GameServer {
       this.gameConfig.playerTeams = gameConfig.playerTeams;
     }
 
+    if (gameConfig.hidePlayerNames !== undefined) {
+      this.gameConfig.hidePlayerNames = gameConfig.hidePlayerNames;
+    }
+
     if (gameConfig.ignoreClanTags !== undefined) {
       this.gameConfig.ignoreClanTags = gameConfig.ignoreClanTags;
     }
@@ -491,10 +495,12 @@ export class GameServer {
   }
 
   public gameInfo(): GameInfo {
+    const shouldAnonymize = this.gameConfig.hidePlayerNames && !this.hasStarted();
+
     return {
       clients: this.activeClients.map((c) => ({
         clientID: c.clientID,
-        username: c.username,
+        username: shouldAnonymize ? "*".repeat(7) : c.username,
       })),
       gameConfig: this.gameConfig,
       gameID: this.id,

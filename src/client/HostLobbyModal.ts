@@ -52,6 +52,7 @@ export class HostLobbyModal extends LitElement {
   @state() private clients: ClientInfo[] = [];
   @state() private useRandomMap = false;
   @state() private disabledUnits: UnitType[] = [];
+  @state() private hidePlayerNames = false;
   @state() private ignoreClanTags = false;
   @state() private lobbyCreatorClientID = "";
   @state() private lobbyIdVisible = true;
@@ -468,6 +469,22 @@ export class HostLobbyModal extends LitElement {
                       `
                 }
 
+                <label
+                  for="hide-player-names"
+                  class="option-card ${this.hidePlayerNames ? "selected" : ""}"
+                >
+                  <div class="checkbox-icon"></div>
+                  <input
+                    type="checkbox"
+                    id="hide-player-names"
+                    @change=${this.handleHidePlayerNamesChange}
+                    .checked=${this.hidePlayerNames}
+                  />
+                  <div class="option-card-title">
+                    ${translateText("host_modal.hide_player_names")}
+                  </div>
+                </label>
+
                 <hr style="width: 100%; border-top: 1px solid #444; margin: 16px 0;" />
 
                 <!-- Individual disables for structures/weapons -->
@@ -651,6 +668,11 @@ export class HostLobbyModal extends LitElement {
     this.putGameConfig();
   }
 
+  private handleHidePlayerNamesChange(e: Event) {
+    this.hidePlayerNames = Boolean((e.target as HTMLInputElement).checked);
+    this.putGameConfig();
+  }
+
   private handleDonateTroopsChange(e: Event) {
     this.donateTroops = Boolean((e.target as HTMLInputElement).checked);
     this.putGameConfig();
@@ -682,18 +704,19 @@ export class HostLobbyModal extends LitElement {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          gameMap: this.selectedMap,
+          bots: this.bots,
           difficulty: this.selectedDifficulty,
           disableNPCs: this.disableNPCs,
-          bots: this.bots,
-          infiniteGold: this.infiniteGold,
-          donateGold: this.donateGold,
-          infiniteTroops: this.infiniteTroops,
-          donateTroops: this.donateTroops,
-          instantBuild: this.instantBuild,
-          ignoreClanTags: this.ignoreClanTags,
-          gameMode: this.gameMode,
           disabledUnits: this.disabledUnits,
+          donateGold: this.donateGold,
+          donateTroops: this.donateTroops,
+          gameMap: this.selectedMap,
+          gameMode: this.gameMode,
+          hidePlayerNames: this.hidePlayerNames,
+          ignoreClanTags: this.ignoreClanTags,
+          infiniteGold: this.infiniteGold,
+          infiniteTroops: this.infiniteTroops,
+          instantBuild: this.instantBuild,
           playerTeams: this.teamCount,
         } satisfies Partial<GameConfig>),
       },
