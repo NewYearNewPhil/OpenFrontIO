@@ -5,6 +5,7 @@ import { ColorPalette, Pattern } from "../../../core/CosmeticSchemas";
 import { EventBus } from "../../../core/EventBus";
 import { GameUpdateType } from "../../../core/game/GameUpdates";
 import { GameView } from "../../../core/game/GameView";
+import "../../components/GameReplayViewer";
 import "../../components/PatternButton";
 import {
   fetchCosmetics,
@@ -13,6 +14,7 @@ import {
 } from "../../Cosmetics";
 import { getUserMe } from "../../jwt";
 import { SendWinnerEvent } from "../../Transport";
+import { GameReplayCapture } from "../replayCapture/GameReplayCapture";
 import { Layer } from "./Layer";
 
 @customElement("win-modal")
@@ -34,9 +36,14 @@ export class WinModal extends LitElement implements Layer {
   @state()
   private patternContent: TemplateResult | null = null;
 
+  @state()
+  private exportingReplay = false;
+
   private _title: string;
 
   private rand = Math.random();
+
+  private replayCapture: GameReplayCapture | null = null;
 
   // Override to prevent shadow DOM creation
   createRenderRoot() {
@@ -45,6 +52,18 @@ export class WinModal extends LitElement implements Layer {
 
   constructor() {
     super();
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+  }
+
+  attachReplayCapture(replayCapture: GameReplayCapture) {
+    if (this.replayCapture === replayCapture) {
+      return;
+    }
+    this.replayCapture = replayCapture;
+    this.requestUpdate();
   }
 
   render() {
@@ -57,7 +76,7 @@ export class WinModal extends LitElement implements Layer {
         <h2 class="m-0 mb-4 text-[26px] text-center text-white">
           ${this._title || ""}
         </h2>
-        ${this.innerHtml()}
+        ${this.innerHtml()} ${this.renderReplaySection()}
         <div
           class="${this.showButtons
             ? "flex justify-between gap-2.5"
@@ -104,6 +123,67 @@ export class WinModal extends LitElement implements Layer {
       return this.steamWishlist();
     }
     return this.renderPatternButton();
+  }
+
+  private renderReplaySection(): TemplateResult | null {
+    if (!this.replayCapture) {
+      return null;
+    }
+    const frameStore = this.replayCapture.getFrameStore();
+    return html`
+      <div class="mt-4">
+        <game-replay-viewer
+          class="block w-full"
+          .frameStore=${frameStore}
+          @replay-request-export=${this.onExportReplayWebM}
+        ></game-replay-viewer>
+      </div>
+    `;
+  }
+
+  private get canExportReplay(): boolean {
+    return (
+      typeof MediaRecorder !== "undefined" &&
+      typeof HTMLCanvasElement !== "undefined" &&
+      "captureStream" in HTMLCanvasElement.prototype
+    );
+  }
+
+  private async onExportReplayWebM() {
+    if (!this.replayCapture || this.exportingReplay) {
+      return;
+    }
+    if (!this.canExportReplay) {
+      console.warn(
+        "Replay export requested but MediaRecorder support is unavailable",
+      );
+      return;
+    }
+    this.exportingReplay = true;
+    console.info("[ReplayCapture] Manual export requested");
+    try {
+      const { blob, filename } = await this.replayCapture.exportAsWebM();
+      if (typeof document === "undefined") {
+        console.warn("Replay export is unavailable in this environment");
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      console.info("[ReplayCapture] Manual export completed", {
+        sizeBytes: blob.size,
+        filename,
+      });
+    } catch (error) {
+      console.error("Failed to export replay capture", error);
+    } finally {
+      this.exportingReplay = false;
+    }
   }
 
   renderPatternButton() {
@@ -196,6 +276,7 @@ export class WinModal extends LitElement implements Layer {
   }
 
   async show() {
+    this.replayCapture?.stopCapturing();
     await this.loadPatternContent();
     this.isVisible = true;
     this.requestUpdate();
