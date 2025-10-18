@@ -2,11 +2,11 @@ import { GameView } from "../../../core/game/GameView";
 import { TransformHandler } from "../TransformHandler";
 import { Layer } from "../layers/Layer";
 import {
-  defaultReplayCaptureConfig,
-  ReplayCaptureConfig,
-} from "./ReplayCaptureConfig";
-import { ReplayCaptureSurface } from "./ReplayCaptureSurface";
-import { ReplayFrame, ReplayFrameStore } from "./ReplayFrameStore";
+  defaultRecapCaptureConfig,
+  RecapCaptureConfig,
+} from "./RecapCaptureConfig";
+import { RecapCaptureSurface } from "./RecapCaptureSurface";
+import { RecapFrame, RecapFrameStore } from "./RecapFrameStore";
 
 interface TransformSnapshot {
   scale: number;
@@ -14,16 +14,16 @@ interface TransformSnapshot {
   offsetY: number;
 }
 
-export interface ReplayCaptureStats {
+export interface RecapCaptureStats {
   frameCount: number;
   approximateDurationMs: number;
   lastTickCaptured: number | null;
 }
 
-export class GameReplayCapture {
-  private readonly config: ReplayCaptureConfig;
-  private readonly surface: ReplayCaptureSurface;
-  private readonly frameStore: ReplayFrameStore;
+export class GameRecapCapture {
+  private readonly config: RecapCaptureConfig;
+  private readonly surface: RecapCaptureSurface;
+  private readonly frameStore: RecapFrameStore;
   private lastCaptureTick: number | null = null;
   private captureInProgress = false;
   private viewport: { width: number; height: number } | null = null;
@@ -37,11 +37,11 @@ export class GameReplayCapture {
     private readonly game: GameView,
     private readonly transformHandler: TransformHandler,
     private readonly layers: Layer[],
-    config?: Partial<ReplayCaptureConfig>,
+    config?: Partial<RecapCaptureConfig>,
   ) {
-    this.config = { ...defaultReplayCaptureConfig, ...config };
-    this.surface = new ReplayCaptureSurface();
-    this.frameStore = new ReplayFrameStore(this.config.maxFrames);
+    this.config = { ...defaultRecapCaptureConfig, ...config };
+    this.surface = new RecapCaptureSurface();
+    this.frameStore = new RecapFrameStore(this.config.maxFrames);
   }
 
   start() {
@@ -69,11 +69,11 @@ export class GameReplayCapture {
     this.refreshViewportSize();
   }
 
-  getFrameStore(): ReplayFrameStore {
+  getFrameStore(): RecapFrameStore {
     return this.frameStore;
   }
 
-  getStats(): ReplayCaptureStats {
+  getStats(): RecapCaptureStats {
     return {
       frameCount: this.frameStore.getFrameCount(),
       approximateDurationMs: this.frameStore.approximateDurationMs(),
@@ -128,7 +128,7 @@ export class GameReplayCapture {
   }> {
     const frames = this.frameStore.getFrames();
     if (frames.length === 0) {
-      throw new Error("No replay frames available for export");
+      throw new Error("No recap frames available for export");
     }
 
     const mimeType = this.resolveExportMimeType();
@@ -190,7 +190,7 @@ export class GameReplayCapture {
       recorder.addEventListener("start", handleStart);
     });
 
-    const drawFrame = async (frame: ReplayFrame) => {
+    const drawFrame = async (frame: RecapFrame) => {
       if (!frame.imageBitmap && typeof createImageBitmap === "function") {
         try {
           frame.imageBitmap = await createImageBitmap(frame.blob);
@@ -245,9 +245,9 @@ export class GameReplayCapture {
 
     const blob = await stopPromise;
     if (blob.size < 2048) {
-      throw new Error("Replay export produced an unexpectedly small recording");
+      throw new Error("Recap export produced an unexpectedly small recording");
     }
-    const filename = `openfront-replay-${Date.now()}.webm`;
+    const filename = `openfront-recap-${Date.now()}.webm`;
     return { blob, filename };
   }
 
@@ -316,7 +316,7 @@ export class GameReplayCapture {
       if (!this.memoryUsageLogged) {
         const bytes = this.frameStore.getApproximateBlobBytes();
         const mebibytes = bytes / (1024 * 1024);
-        console.info("[ReplayCapture] First frame stored", {
+        console.info("[RecapCapture] First frame stored", {
           frames: this.frameStore.getFrameCount(),
           resolution: `${result.width}x${result.height}`,
           approxBlobMiB: Number(mebibytes.toFixed(2)),
@@ -325,7 +325,7 @@ export class GameReplayCapture {
       }
       this.lastCaptureTick = tick;
     } catch (error) {
-      console.error("GameReplayCapture failed to capture frame", error);
+      console.error("GameRecapCapture failed to capture frame", error);
     } finally {
       if (originalBoundingRect) {
         handlerInternals._boundingRect = originalBoundingRect;

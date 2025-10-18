@@ -1,20 +1,20 @@
 import { html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import {
-  ReplayFrame,
-  ReplayFrameStore,
-} from "../graphics/replayCapture/ReplayFrameStore";
+  RecapFrame,
+  RecapFrameStore,
+} from "../graphics/recapCapture/RecapFrameStore";
 
-@customElement("game-replay-viewer")
-export class GameReplayViewer extends LitElement {
+@customElement("game-recap-viewer")
+export class GameRecapViewer extends LitElement {
   @property({ attribute: false })
-  frameStore: ReplayFrameStore | null = null;
+  frameStore: RecapFrameStore | null = null;
 
   @property({ type: Boolean })
   autoplay: boolean = true;
 
   @state()
-  private frames: readonly ReplayFrame[] = [];
+  private frames: readonly RecapFrame[] = [];
 
   @state()
   private currentIndex = 0;
@@ -73,7 +73,7 @@ export class GameReplayViewer extends LitElement {
         ${showDownloadButton
           ? html`<button
               class="absolute top-2 right-2 flex items-center justify-center w-9 h-9 bg-blue-500/80 hover:bg-blue-500 text-white rounded shadow"
-              aria-label="Download replay"
+              aria-label="Download recap"
               @click=${this.downloadAutoRecording}
             >
               <span class="text-lg leading-none" aria-hidden="true">⬇️</span>
@@ -83,7 +83,7 @@ export class GameReplayViewer extends LitElement {
           ? html`<div
               class="absolute inset-0 flex items-center justify-center text-sm text-white/70"
             >
-              ${"Replay capture warming up"}
+              ${"Recap capture warming up"}
             </div>`
           : null}
       </div>
@@ -257,7 +257,7 @@ export class GameReplayViewer extends LitElement {
 
   private downloadAutoRecording = () => {
     this.dispatchEvent(
-      new CustomEvent("replay-request-export", { bubbles: true }),
+      new CustomEvent("recap-request-export", { bubbles: true }),
     );
   };
 }

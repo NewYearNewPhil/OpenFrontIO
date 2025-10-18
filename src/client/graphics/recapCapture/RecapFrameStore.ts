@@ -1,4 +1,4 @@
-export interface ReplayFrame {
+export interface RecapFrame {
   tick: number;
   capturedAt: number;
   blob: Blob;
@@ -8,33 +8,33 @@ export interface ReplayFrame {
   imageBitmap?: ImageBitmap;
 }
 
-export interface SerializableReplayFrame {
+export interface SerializableRecapFrame {
   tick: number;
   capturedAt: number;
   mimeType: string;
   dataUrl: string;
 }
 
-type Subscriber = (frames: readonly ReplayFrame[]) => void;
+type Subscriber = (frames: readonly RecapFrame[]) => void;
 
-export class ReplayFrameStore {
-  private frames: ReplayFrame[] = [];
+export class RecapFrameStore {
+  private frames: RecapFrame[] = [];
   private subscribers: Set<Subscriber> = new Set();
   private loopPauseMs = 0;
   private totalBlobBytes = 0;
 
   constructor(private readonly maxFrames: number) {}
 
-  addFrame(frame: Omit<ReplayFrame, "objectUrl">) {
+  addFrame(frame: Omit<RecapFrame, "objectUrl">) {
     const objectUrl = URL.createObjectURL(frame.blob);
-    const nextFrame: ReplayFrame = { ...frame, objectUrl };
+    const nextFrame: RecapFrame = { ...frame, objectUrl };
     this.frames.push(nextFrame);
     this.totalBlobBytes += frame.blob.size;
     this.compactIfNeeded();
     this.notify();
   }
 
-  getFrames(): readonly ReplayFrame[] {
+  getFrames(): readonly RecapFrame[] {
     return this.frames;
   }
 
@@ -43,8 +43,8 @@ export class ReplayFrameStore {
       return;
     }
     while (this.frames.length > this.maxFrames) {
-      const next: ReplayFrame[] = [];
-      const removed: ReplayFrame[] = [];
+      const next: RecapFrame[] = [];
+      const removed: RecapFrame[] = [];
       for (let index = 0; index < this.frames.length; index += 1) {
         if (index % 2 === 0) {
           next.push(this.frames[index]);
@@ -100,8 +100,8 @@ export class ReplayFrameStore {
     }
   }
 
-  async serializeFrames(mimeType: string): Promise<SerializableReplayFrame[]> {
-    const serialized: SerializableReplayFrame[] = [];
+  async serializeFrames(mimeType: string): Promise<SerializableRecapFrame[]> {
+    const serialized: SerializableRecapFrame[] = [];
     for (const frame of this.frames) {
       const dataUrl = await this.blobToDataUrl(frame.blob);
       serialized.push({

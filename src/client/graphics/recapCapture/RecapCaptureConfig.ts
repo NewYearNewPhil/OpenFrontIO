@@ -1,4 +1,4 @@
-export interface ReplayCaptureConfig {
+export interface RecapCaptureConfig {
   captureEveryNTicks: number;
   maxFrames: number;
   targetWidth?: number;
@@ -11,7 +11,7 @@ export interface ReplayCaptureConfig {
   exportMimeTypes: string[];
 }
 
-export const defaultReplayCaptureConfig: ReplayCaptureConfig = {
+export const defaultRecapCaptureConfig: RecapCaptureConfig = {
   captureEveryNTicks: 50,
   maxFrames: 900,
   targetWidth: 1920,

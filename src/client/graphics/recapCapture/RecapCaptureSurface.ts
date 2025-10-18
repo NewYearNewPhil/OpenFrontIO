@@ -28,7 +28,7 @@ export interface CaptureOptions {
   ) => void;
 }
 
-export class ReplayCaptureSurface {
+export class RecapCaptureSurface {
   private canvas: HTMLCanvasElement;
   private context: CanvasRenderingContext2D;
   private captureInFlight = false;
@@ -45,7 +45,7 @@ export class ReplayCaptureSurface {
     }
     const ctx = this.canvas.getContext("2d");
     if (!ctx) {
-      throw new Error("ReplayCaptureSurface failed to get 2D context");
+      throw new Error("RecapCaptureSurface failed to get 2D context");
     }
     this.context = ctx;
   }
@@ -95,7 +95,7 @@ export class ReplayCaptureSurface {
           layer.renderLayer(this.context);
         } catch (error) {
           console.error(
-            "ReplayCaptureSurface failed to render layer",
+            "RecapCaptureSurface failed to render layer",
             layer,
             error,
           );
@@ -115,7 +115,7 @@ export class ReplayCaptureSurface {
           imageBitmap = await createImageBitmap(blob);
         } catch (error) {
           console.warn(
-            "ReplayCaptureSurface could not create ImageBitmap",
+            "RecapCaptureSurface could not create ImageBitmap",
             error,
           );
         }
@@ -150,7 +150,7 @@ export class ReplayCaptureSurface {
       this.canvas.toBlob(
         (blob) => {
           if (!blob) {
-            reject(new Error("Failed to encode replay frame"));
+            reject(new Error("Failed to encode recap frame"));
             return;
           }
           resolve(blob);
