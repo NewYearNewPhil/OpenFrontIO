@@ -66,6 +66,7 @@ export async function setup(
     bots: 0,
     infiniteGold: false,
     infiniteTroops: false,
+    startingGold: 0,
     instantBuild: false,
     randomSpawn: false,
     ..._gameConfig,

@@ -1,7 +1,7 @@
 import { LitElement, html } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import randomMap from "../../resources/images/RandomMap.webp";
-import { translateText } from "../client/Utils";
+import { renderNumber, translateText } from "../client/Utils";
 import {
   Difficulty,
   Duos,
@@ -27,6 +27,11 @@ import { FlagInput } from "./FlagInput";
 import { JoinLobbyEvent } from "./Main";
 import { UsernameInput } from "./UsernameInput";
 import { renderUnitTypeOptions } from "./utilities/RenderUnitTypeOptions";
+import {
+  STARTING_GOLD_PRESETS,
+  startingGoldIndexFromValue,
+  startingGoldValueFromIndex,
+} from "./utilities/StartingGoldPresets";
 
 @customElement("single-player-modal")
 export class SinglePlayerModal extends LitElement {
@@ -45,6 +50,8 @@ export class SinglePlayerModal extends LitElement {
   @state() private maxTimerValue: number | undefined = undefined;
   @state() private instantBuild: boolean = false;
   @state() private randomSpawn: boolean = false;
+  @state() private startingGold: number = 0;
+  @state() private startingGoldEnabled = false;
   @state() private useRandomMap: boolean = false;
   @state() private gameMode: GameMode = GameMode.FFA;
   @state() private teamCount: TeamCountConfig = 2;
@@ -358,6 +365,7 @@ export class SinglePlayerModal extends LitElement {
                   ${translateText("single_modal.compact_map")}
                 </div>
               </label>
+
               <label
                 for="end-timer"
                 class="option-card ${this.maxTimer ? "selected" : ""}"
@@ -389,6 +397,44 @@ export class SinglePlayerModal extends LitElement {
                     />`}
                 <div class="option-card-title">
                   ${translateText("single_modal.max_timer")}
+                </div>
+              </label>
+
+              <label
+                for="singleplayer-modal-starting-gold-toggle"
+                class="option-card ${this.startingGoldEnabled
+                  ? "selected"
+                  : ""}"
+              >
+                <div class="checkbox-icon"></div>
+                <input
+                  type="checkbox"
+                  id="singleplayer-modal-starting-gold-toggle"
+                  @change=${this.handleStartingGoldToggle}
+                  .checked=${this.startingGoldEnabled}
+                />
+                ${this.startingGoldEnabled
+                  ? html`<input
+                      type="range"
+                      id="singleplayer-modal-starting-gold-slider"
+                      min="0"
+                      max=${STARTING_GOLD_PRESETS.length - 1}
+                      step="1"
+                      class="option-slider"
+                      style=${this.sliderStyle(
+                        this.getStartingGoldSliderIndex(),
+                        0,
+                        STARTING_GOLD_PRESETS.length - 1,
+                      )}
+                      .value=${String(this.getStartingGoldSliderIndex())}
+                      @input=${this.handleStartingGoldSliderChange}
+                    />`
+                  : ""}
+                <div class="option-card-title">
+                  <span>${translateText("single_modal.starting_gold")}</span>
+                  ${this.startingGoldEnabled
+                    ? renderNumber(this.startingGold)
+                    : translateText("user_setting.off")}
                 </div>
               </label>
             </div>
@@ -463,6 +509,29 @@ export class SinglePlayerModal extends LitElement {
 
   private handleRandomSpawnChange(e: Event) {
     this.randomSpawn = Boolean((e.target as HTMLInputElement).checked);
+  }
+
+  private handleStartingGoldToggle(e: Event) {
+    const enabled = (e.target as HTMLInputElement).checked;
+    this.startingGoldEnabled = enabled;
+    if (!enabled) {
+      this.startingGold = STARTING_GOLD_PRESETS[0];
+    }
+  }
+
+  private handleStartingGoldSliderChange(e: Event) {
+    const slider = e.target as HTMLInputElement;
+    this.updateSliderProgressElement(slider);
+    const index = parseInt(slider.value, 10);
+    if (Number.isNaN(index)) {
+      return;
+    }
+    this.startingGold = startingGoldValueFromIndex(index);
+    this.startingGoldEnabled = true;
+  }
+
+  private getStartingGoldSliderIndex(): number {
+    return startingGoldIndexFromValue(this.startingGold);
   }
 
   private handleInfiniteGoldChange(e: Event) {
@@ -612,6 +681,9 @@ export class SinglePlayerModal extends LitElement {
               infiniteTroops: this.infiniteTroops,
               instantBuild: this.instantBuild,
               randomSpawn: this.randomSpawn,
+              startingGold: this.startingGoldEnabled
+                ? this.startingGold
+                : STARTING_GOLD_PRESETS[0],
               disabledUnits: this.disabledUnits
                 .map((u) => Object.values(UnitType).find((ut) => ut === u))
                 .filter((ut): ut is UnitType => ut !== undefined),

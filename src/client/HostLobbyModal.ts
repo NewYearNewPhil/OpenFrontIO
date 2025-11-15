@@ -1,7 +1,7 @@
 import { LitElement, html } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import randomMap from "../../resources/images/RandomMap.webp";
-import { translateText } from "../client/Utils";
+import { renderNumber, translateText } from "../client/Utils";
 import { getServerConfigFromClient } from "../core/configuration/ConfigLoader";
 import {
   Difficulty,
@@ -23,11 +23,17 @@ import {
   TeamCountConfig,
 } from "../core/Schemas";
 import { generateID } from "../core/Util";
+import "./components/baseComponents/Button";
 import "./components/baseComponents/Modal";
 import "./components/Difficulties";
 import "./components/Maps";
 import { JoinLobbyEvent } from "./Main";
 import { renderUnitTypeOptions } from "./utilities/RenderUnitTypeOptions";
+import {
+  STARTING_GOLD_PRESETS,
+  startingGoldIndexFromValue,
+  startingGoldValueFromIndex,
+} from "./utilities/StartingGoldPresets";
 
 @customElement("host-lobby-modal")
 export class HostLobbyModal extends LitElement {
@@ -49,6 +55,8 @@ export class HostLobbyModal extends LitElement {
   @state() private maxTimerValue: number | undefined = undefined;
   @state() private instantBuild: boolean = false;
   @state() private randomSpawn: boolean = false;
+  @state() private startingGold: number = 0;
+  @state() private startingGoldEnabled = false;
   @state() private compactMap: boolean = false;
   @state() private lobbyId = "";
   @state() private copySuccess = false;
@@ -524,6 +532,47 @@ export class HostLobbyModal extends LitElement {
                     ${translateText("host_modal.max_timer")}
                   </div>
                 </label>
+
+                <label
+                  for="host-modal-starting-gold-toggle"
+                  class="option-card ${this.startingGoldEnabled ? "selected" : ""}"
+                >
+                  <div class="checkbox-icon"></div>
+                  <input
+                    type="checkbox"
+                    id="host-modal-starting-gold-toggle"
+                    @change=${this.handleStartingGoldToggle}
+                    .checked=${this.startingGoldEnabled}
+                  />
+                  ${
+                    this.startingGoldEnabled
+                      ? html`<input
+                          type="range"
+                          id="host-modal-starting-gold-slider"
+                          min="0"
+                          max=${STARTING_GOLD_PRESETS.length - 1}
+                          step="1"
+                          class="option-slider"
+                          style=${this.sliderStyle(
+                            this.getStartingGoldSliderIndex(),
+                            0,
+                            STARTING_GOLD_PRESETS.length - 1,
+                          )}
+                          .value=${String(this.getStartingGoldSliderIndex())}
+                          @input=${this.handleStartingGoldSliderChange}
+                        />`
+                      : ""
+                  }
+                  <div class="option-card-title">
+                    <span>${translateText("host_modal.starting_gold")}</span>
+                    ${
+                      this.startingGoldEnabled
+                        ? renderNumber(this.startingGold)
+                        : translateText("user_setting.off")
+                    }
+                  </div>
+                </label>
+                
                 <hr style="width: 100%; border-top: 1px solid #444; margin: 16px 0;" />
 
                 <!-- Individual disables for structures/weapons -->
@@ -612,6 +661,14 @@ export class HostLobbyModal extends LitElement {
     createLobby(this.lobbyCreatorClientID)
       .then((lobby) => {
         this.lobbyId = lobby.gameID;
+        if (lobby.gameConfig) {
+          const startingGoldFromServer =
+            lobby.gameConfig.startingGold ?? STARTING_GOLD_PRESETS[0];
+          this.startingGold = this.snapStartingGoldValue(
+            startingGoldFromServer,
+          );
+          this.startingGoldEnabled = this.startingGold > 0;
+        }
         // join lobby
       })
       .then(() => {
@@ -692,6 +749,31 @@ export class HostLobbyModal extends LitElement {
   private handleRandomSpawnChange(e: Event) {
     this.randomSpawn = Boolean((e.target as HTMLInputElement).checked);
     this.putGameConfig();
+  }
+
+  private handleStartingGoldToggle(e: Event) {
+    const enabled = (e.target as HTMLInputElement).checked;
+    this.startingGoldEnabled = enabled;
+    if (!enabled) {
+      this.startingGold = STARTING_GOLD_PRESETS[0];
+    }
+    this.putGameConfig();
+  }
+
+  private handleStartingGoldSliderChange(e: Event) {
+    const slider = e.target as HTMLInputElement;
+    this.updateSliderProgressElement(slider);
+    const index = parseInt(slider.value, 10);
+    if (Number.isNaN(index)) {
+      return;
+    }
+    this.startingGold = startingGoldValueFromIndex(index);
+    this.startingGoldEnabled = true;
+    this.putGameConfig();
+  }
+
+  private getStartingGoldSliderIndex(): number {
+    return startingGoldIndexFromValue(this.startingGold);
   }
 
   private handleInfiniteGoldChange(e: Event) {
@@ -778,6 +860,7 @@ export class HostLobbyModal extends LitElement {
           randomSpawn: this.randomSpawn,
           gameMode: this.gameMode,
           disabledUnits: this.disabledUnits,
+          startingGold: this.startingGold,
           playerTeams: this.teamCount,
           ...(this.gameMode === GameMode.Team &&
           this.teamCount === HumansVsNations
@@ -802,6 +885,10 @@ export class HostLobbyModal extends LitElement {
       : this.disabledUnits.filter((u) => u !== unit);
 
     this.putGameConfig();
+  }
+
+  private snapStartingGoldValue(value: number): number {
+    return startingGoldValueFromIndex(startingGoldIndexFromValue(value));
   }
 
   private sliderStyle(value: number, min: number, max: number): string {
@@ -882,6 +969,18 @@ export class HostLobbyModal extends LitElement {
         console.log(`got game info response: ${JSON.stringify(data)}`);
 
         this.clients = data.clients ?? [];
+        if (data.gameConfig) {
+          if (typeof data.gameConfig.startingGold === "number") {
+            const snapped = this.snapStartingGoldValue(
+              data.gameConfig.startingGold,
+            );
+            const startingGoldChanged = this.startingGold !== snapped;
+            this.startingGold = snapped;
+            if (startingGoldChanged) {
+              this.startingGoldEnabled = this.startingGold !== 0;
+            }
+          }
+        }
       });
   }
 
