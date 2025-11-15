@@ -335,9 +335,11 @@ export class HostLobbyModal extends LitElement {
                     min="0"
                     max="400"
                     step="1"
+                    class="option-slider"
+                    style=${this.sliderStyle(this.bots, 0, 400)}
                     @input=${this.handleBotsChange}
                     @change=${this.handleBotsChange}
-                    .value="${String(this.bots)}"
+                    .value=${String(this.bots)}
                   />
                   <div class="option-card-title">
                     <span>${translateText("host_modal.bots")}</span>${
@@ -660,7 +662,9 @@ export class HostLobbyModal extends LitElement {
 
   // Modified to include debouncing
   private handleBotsChange(e: Event) {
-    const value = parseInt((e.target as HTMLInputElement).value);
+    const slider = e.target as HTMLInputElement;
+    this.updateSliderProgressElement(slider);
+    const value = parseInt(slider.value, 10);
     if (isNaN(value) || value < 0 || value > 400) {
       return;
     }
@@ -798,6 +802,27 @@ export class HostLobbyModal extends LitElement {
       : this.disabledUnits.filter((u) => u !== unit);
 
     this.putGameConfig();
+  }
+
+  private sliderStyle(value: number, min: number, max: number): string {
+    if (max === min) return "--progress:0%";
+    const percent = ((value - min) / (max - min)) * 100;
+    return `--progress:${Math.max(0, Math.min(100, percent))}%`;
+  }
+
+  private updateSliderProgressElement(slider: HTMLInputElement): void {
+    const min = Number(slider.min);
+    const max = Number(slider.max);
+    const value = Number(slider.value);
+    if (Number.isNaN(min) || Number.isNaN(max) || max === min) {
+      slider.style.setProperty("--progress", "0%");
+      return;
+    }
+    const percent = ((value - min) / (max - min)) * 100;
+    slider.style.setProperty(
+      "--progress",
+      `${Math.max(0, Math.min(100, percent))}%`,
+    );
   }
 
   private getRandomMap(): GameMapType {
