@@ -45,6 +45,8 @@ export class SinglePlayerModal extends LitElement {
   @state() private maxTimerValue: number | undefined = undefined;
   @state() private instantBuild: boolean = false;
   @state() private randomSpawn: boolean = false;
+  @state() private goldMultiplier: number = 1;
+  @state() private goldMultiplierEnabled = false;
   @state() private useRandomMap: boolean = false;
   @state() private gameMode: GameMode = GameMode.FFA;
   @state() private teamCount: TeamCountConfig = 2;
@@ -391,6 +393,40 @@ export class SinglePlayerModal extends LitElement {
                   ${translateText("single_modal.max_timer")}
                 </div>
               </label>
+
+              <label
+                for="singleplayer-modal-gold-multiplier-toggle"
+                class="option-card ${this.goldMultiplierEnabled
+                  ? "selected"
+                  : ""}"
+              >
+                <div class="checkbox-icon"></div>
+                <input
+                  type="checkbox"
+                  id="singleplayer-modal-gold-multiplier-toggle"
+                  @change=${this.handleGoldMultiplierToggle}
+                  .checked=${this.goldMultiplierEnabled}
+                />
+                ${this.goldMultiplierEnabled
+                  ? html`<input
+                      type="range"
+                      id="singleplayer-modal-gold-multiplier-slider"
+                      min="0"
+                      max="10"
+                      step="0.1"
+                      class="option-slider"
+                      style=${this.sliderStyle(this.goldMultiplier, 0, 10)}
+                      .value=${this.goldMultiplier.toFixed(1)}
+                      @input=${this.handleGoldMultiplierSliderChange}
+                    />`
+                  : ""}
+                <div class="option-card-title">
+                  <span>${translateText("single_modal.gold_multiplier")}</span>
+                  ${this.goldMultiplierEnabled
+                    ? this.goldMultiplier.toFixed(1)
+                    : translateText("user_setting.off")}
+                </div>
+              </label>
             </div>
 
             <hr
@@ -465,6 +501,25 @@ export class SinglePlayerModal extends LitElement {
     this.randomSpawn = Boolean((e.target as HTMLInputElement).checked);
   }
 
+  private handleGoldMultiplierToggle(e: Event) {
+    const enabled = (e.target as HTMLInputElement).checked;
+    this.goldMultiplierEnabled = enabled;
+    if (!enabled) {
+      this.goldMultiplier = 1;
+    }
+  }
+
+  private handleGoldMultiplierSliderChange(e: Event) {
+    const slider = e.target as HTMLInputElement;
+    this.updateSliderProgressElement(slider);
+    const value = parseFloat(slider.value);
+    if (Number.isNaN(value)) {
+      return;
+    }
+    this.goldMultiplier = this.normalizeGoldMultiplier(value);
+    this.goldMultiplierEnabled = true;
+  }
+
   private handleInfiniteGoldChange(e: Event) {
     this.infiniteGold = Boolean((e.target as HTMLInputElement).checked);
   }
@@ -518,6 +573,11 @@ export class SinglePlayerModal extends LitElement {
     this.disabledUnits = checked
       ? [...this.disabledUnits, unit]
       : this.disabledUnits.filter((u) => u !== unit);
+  }
+
+  private normalizeGoldMultiplier(value: number): number {
+    const clamped = Math.min(10, Math.max(0, value));
+    return Math.round(clamped * 10) / 10;
   }
 
   private sliderStyle(value: number, min: number, max: number): string {
@@ -612,6 +672,9 @@ export class SinglePlayerModal extends LitElement {
               infiniteTroops: this.infiniteTroops,
               instantBuild: this.instantBuild,
               randomSpawn: this.randomSpawn,
+              goldMultiplier: this.goldMultiplierEnabled
+                ? this.goldMultiplier
+                : 1,
               disabledUnits: this.disabledUnits
                 .map((u) => Object.values(UnitType).find((ut) => ut === u))
                 .filter((ut): ut is UnitType => ut !== undefined),

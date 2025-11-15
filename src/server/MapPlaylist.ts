@@ -93,6 +93,7 @@ export class MapPlaylist {
       difficulty: Difficulty.Medium,
       infiniteGold: false,
       infiniteTroops: false,
+      goldMultiplier: 1,
       maxTimerValue: undefined,
       instantBuild: false,
       randomSpawn: false,

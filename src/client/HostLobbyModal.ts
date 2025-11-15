@@ -23,6 +23,7 @@ import {
   TeamCountConfig,
 } from "../core/Schemas";
 import { generateID } from "../core/Util";
+import "./components/baseComponents/Button";
 import "./components/baseComponents/Modal";
 import "./components/Difficulties";
 import "./components/Maps";
@@ -49,6 +50,8 @@ export class HostLobbyModal extends LitElement {
   @state() private maxTimerValue: number | undefined = undefined;
   @state() private instantBuild: boolean = false;
   @state() private randomSpawn: boolean = false;
+  @state() private goldMultiplier: number = 1;
+  @state() private goldMultiplierEnabled = false;
   @state() private compactMap: boolean = false;
   @state() private lobbyId = "";
   @state() private copySuccess = false;
@@ -524,6 +527,43 @@ export class HostLobbyModal extends LitElement {
                     ${translateText("host_modal.max_timer")}
                   </div>
                 </label>
+
+                <label
+                  for="host-modal-gold-multiplier-toggle"
+                  class="option-card ${this.goldMultiplierEnabled ? "selected" : ""}"
+                >
+                  <div class="checkbox-icon"></div>
+                  <input
+                    type="checkbox"
+                    id="host-modal-gold-multiplier-toggle"
+                    @change=${this.handleGoldMultiplierToggle}
+                    .checked=${this.goldMultiplierEnabled}
+                  />
+                  ${
+                    this.goldMultiplierEnabled
+                      ? html`<input
+                          type="range"
+                          id="host-modal-gold-multiplier-slider"
+                          min="0"
+                          max="10"
+                          step="0.1"
+                          class="option-slider"
+                          style=${this.sliderStyle(this.goldMultiplier, 0, 10)}
+                          .value=${this.goldMultiplier.toFixed(1)}
+                          @input=${this.handleGoldMultiplierSliderChange}
+                        />`
+                      : ""
+                  }
+                  <div class="option-card-title">
+                    <span>${translateText("host_modal.gold_multiplier")}</span>
+                    ${
+                      this.goldMultiplierEnabled
+                        ? this.goldMultiplier.toFixed(1)
+                        : translateText("user_setting.off")
+                    }
+                  </div>
+                </label>
+                
                 <hr style="width: 100%; border-top: 1px solid #444; margin: 16px 0;" />
 
                 <!-- Individual disables for structures/weapons -->
@@ -612,6 +652,13 @@ export class HostLobbyModal extends LitElement {
     createLobby(this.lobbyCreatorClientID)
       .then((lobby) => {
         this.lobbyId = lobby.gameID;
+        if (lobby.gameConfig) {
+          const goldMultiplierFromServer = lobby.gameConfig.goldMultiplier ?? 1;
+          this.goldMultiplier = this.normalizeGoldMultiplier(
+            goldMultiplierFromServer,
+          );
+          this.goldMultiplierEnabled = this.goldMultiplier !== 1;
+        }
         // join lobby
       })
       .then(() => {
@@ -691,6 +738,27 @@ export class HostLobbyModal extends LitElement {
 
   private handleRandomSpawnChange(e: Event) {
     this.randomSpawn = Boolean((e.target as HTMLInputElement).checked);
+    this.putGameConfig();
+  }
+
+  private handleGoldMultiplierToggle(e: Event) {
+    const enabled = (e.target as HTMLInputElement).checked;
+    this.goldMultiplierEnabled = enabled;
+    if (!enabled) {
+      this.goldMultiplier = 1;
+    }
+    this.putGameConfig();
+  }
+
+  private handleGoldMultiplierSliderChange(e: Event) {
+    const slider = e.target as HTMLInputElement;
+    this.updateSliderProgressElement(slider);
+    const value = parseFloat(slider.value);
+    if (Number.isNaN(value)) {
+      return;
+    }
+    this.goldMultiplier = this.normalizeGoldMultiplier(value);
+    this.goldMultiplierEnabled = true;
     this.putGameConfig();
   }
 
@@ -778,6 +846,7 @@ export class HostLobbyModal extends LitElement {
           randomSpawn: this.randomSpawn,
           gameMode: this.gameMode,
           disabledUnits: this.disabledUnits,
+          goldMultiplier: this.goldMultiplier,
           playerTeams: this.teamCount,
           ...(this.gameMode === GameMode.Team &&
           this.teamCount === HumansVsNations
@@ -802,6 +871,11 @@ export class HostLobbyModal extends LitElement {
       : this.disabledUnits.filter((u) => u !== unit);
 
     this.putGameConfig();
+  }
+
+  private normalizeGoldMultiplier(value: number): number {
+    const clamped = Math.min(10, Math.max(0, value));
+    return Math.round(clamped * 10) / 10;
   }
 
   private sliderStyle(value: number, min: number, max: number): string {
@@ -882,6 +956,18 @@ export class HostLobbyModal extends LitElement {
         console.log(`got game info response: ${JSON.stringify(data)}`);
 
         this.clients = data.clients ?? [];
+        if (data.gameConfig) {
+          if (typeof data.gameConfig.goldMultiplier === "number") {
+            const normalized = this.normalizeGoldMultiplier(
+              data.gameConfig.goldMultiplier,
+            );
+            const goldMultiplierChanged = this.goldMultiplier !== normalized;
+            this.goldMultiplier = normalized;
+            if (goldMultiplierChanged) {
+              this.goldMultiplierEnabled = this.goldMultiplier !== 1;
+            }
+          }
+        }
       });
   }
 

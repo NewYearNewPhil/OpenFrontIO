@@ -118,6 +118,9 @@ export class GameServer {
     if (gameConfig.randomSpawn !== undefined) {
       this.gameConfig.randomSpawn = gameConfig.randomSpawn;
     }
+    if (gameConfig.goldMultiplier !== undefined) {
+      this.gameConfig.goldMultiplier = gameConfig.goldMultiplier;
+    }
     if (gameConfig.gameMode !== undefined) {
       this.gameConfig.gameMode = gameConfig.gameMode;
     }
